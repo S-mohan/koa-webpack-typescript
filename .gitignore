@@ -1,0 +1,21 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+node_modules/
+typings/
+.npm
+.eslintcache
+.node_repl_history
+
+# dotenv environment variables file
+.env
+
+# next.js build output
+.next
+
+.DS_Store
+.history/*
+dist
+package-lock.json
+back

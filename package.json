@@ -1,0 +1,30 @@
+{
+  "name": "koa-webpack-typescript",
+  "version": "6.3.0",
+  "description": "基于Webpack/TypeScript/Koa的环境配置",
+  "main": "./bin/app.server.js",
+  "scripts": {
+    "start": "nodemon",
+    "dev": "rm -rf dist && cross-env NODE_ENV=development node bin/dev.server.js",
+    "build": "rm -rf dist && cross-env NODE_ENV=production webpack --env=production --mode=production --config scripts/webpack.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/S-mohan/koa-webpack-typescript.git"
+  },
+  "keywords": [
+    "koa webpack typescript"
+  ],
+  "author": "smohan <https://smohan.net>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/S-mohan/koa-webpack-typescript/issues"
+  },
+  "homepage": "https://github.com/S-mohan/koa-webpack-typescript#readme",
+  "dependencies": {
+   
+  },
+  "devDependencies": {
+   
+  }
+}

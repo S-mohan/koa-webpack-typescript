@@ -1,0 +1,29 @@
+│  .babelrc
+│  .gitignore
+│  LICENSE
+│  nodemon.json
+│  package.json
+│  postcss.config.js
+│  tsconfig.json
+│
+├─bin
+├─scripts
+│      webpack.config.js
+│
+└─src
+    ├─assets
+    │  ├─entries
+    │  ├─imgs
+    │  ├─scss
+    │  └─ts
+    ├─server
+    │  │  app.ts
+    │  │
+    │  ├─config
+    │  ├─controller
+    │  ├─router
+    │  └─utils
+    └─views
+        │  index.html
+        │
+        └─layout
