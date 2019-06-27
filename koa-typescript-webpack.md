@@ -50,7 +50,7 @@
 `ts-node`启动项目后，整个流程分为两部分，蓝色线条的代表纯服务端代码的编译过程。服务端代码是纯`typeScript`文件，可以通过`ts-node`直接编译运行。前端代码包含了`ejs`渲染所需要的模板文件(html)，以及模板中所引用的静态资源(ts, scss, img)，这部分需要通过webpack来编译。
 
 ```typescript
-// bin/dev.server.ts
+// path: bin/dev.server.ts
 import webpack = require('webpack')
 // 引入项目主模块
 import app from '../src/server/app'
@@ -63,14 +63,15 @@ const webpackConfig = require('../scripts/webpack.config.js')
 const compiler = webpack(webpackConfig)
 
 app.use(devMiddleware(compiler, {
-  publicPath: '/' // 很重要，提供了静态资源的路径
+  // 很重要，提供了静态资源的路径, 该路径与webpackConfig中的output.publicPath 对应
+  publicPath: '/' 
 }))
 
 const PORT: number = Number(process.env.PORT) || 3000
 app.listen(PORT) 
 ```
 
-- 项目运行时通过 `webpack-dev-middleware` 中间件来调用webpack，以便 `ctx.render` 时渲染的就是编译后的文件；
+- 项目运行时通过 `webpack-dev-middleware` 中间件来调用webpack，以便 `ctx.render` 时渲染的就是**编译后**的模板文件；
 - 通过`glob`模块来遍历`src/entries/*.ts`下的入口文件，生成webpack的`entry`配置项`config.entry`；这也是**Webpack多页面配置**必不可少的一步；
 - 通过`ts-loader/babel-loader`等来编译入口文件以及入口文件中所引用的`ts/js`模块；
 - 通过`css-loader/sass-loader`等来编译入口文件中所引用的`scss/css`模块，并且直接通过`MiniCssExtractPlugin.loader`来独立生成css文件；
@@ -95,7 +96,7 @@ npm install webpack-dev-middleware @types/webpack-dev-middleware --save-dev
 ##### koa-webpack-dev-middleware
 
 ```typescript
-// src/server/middleware/webpack-dev-middleware.ts
+// path: src/server/middleware/webpack-dev-middleware.ts
 // opts 配置同 webpack-dev-middleware
 
 import * as WebpackDevMiddleware from 'webpack-dev-middleware'
@@ -126,8 +127,10 @@ export default devMiddleware
 webpack 要实现一个多页面的配置，需要配置多个入口。随着深入的开发，入口往往是动态不定的，因此要实现一个动态获取入口的方法。
 
 [glob](https://www.npmjs.com/package/glob)是一个允许正则匹配文件路径的模块，借助glob模块，很容易遍历某个目录下的所有文件来生成一个入口的map。
+
 ```javascript
-// scripts/webpack.config.js
+// path: scripts/webpack.config.js
+// ...
 
 // 获取入口文件
 const entries = () => {
@@ -156,20 +159,69 @@ const entries = () => {
 }
 
 // webpack config
-module.exports = {
-  entry: entries()
+const webpackConfig = {
+  entry: entries(),
+  // ...
 }
+
+module.exports = webpackConfig
 ```
 
 #### 入口文件映射模板文件
-由于前端源码使用的typescript/es6/scss，这些文件必须经过编译后才能被浏览器识别。同时，对资源文件的版本处理（加版本号），也需要借助`HtmlWebpackPlugin`这个插件注入到对应模板上。就像流程图中示意的那样，当访问路由时（如 localhost:3000/blog），ejs 加载的并不是 `src/views` 下的模板，**而是编译后（此时 css/js的引用已经注入到页面中）的位于 `dist/views`下的新的模板文件**。
+由于前端源码使用的typescript/es6/scss，这些文件必须经过编译后才能被浏览器识别。同时，对资源文件的版本处理（加版本号），也需要借助`HtmlWebpackPlugin`这个插件注入到对应模板上。就像流程图中示意的那样，当访问路由时（如 localhost:3000/blog），ejs 加载的并不是 `src/views` 下的模板，**而是编译后（此时 css/js的引用已经注入到页面中）的位于 `dist/views`下的新的模板文件**。多入口对应多个模板，每个模板文件和入口文件应该有个映射关系，这个关系可以通过维护一个map来实现（不利于增改），也可以通过文件命名规则来实现。这里采用命名规则来实现，这样更有利于自动化。
 
+```javascript
+// path: scripts/webpack.config.js
+// ...
 
+// 遍历webpackConfig入口, key 对应了模板的文件名，这个命名规则可以更复杂些，比如增加对子目录的支持
+// {
+//   index: 'views/index.html',
+//   blog: 'views/blog.html'
+// }
 
+const isProduction = process.env.NODE_ENV === 'production'
+
+Object.keys(webpackConfig.entry).forEach(entry => {
+  // 在 plugins 配置中增加了多个 HtmlWebpackPlugin 实例
+  webpackConfig.plugins.push(new HtmlWebpackPlugin({
+    filename: 'views/' + entry + '.html',
+    template: path.resolve(__dirname, `../src/views/${entry}.html`),
+    chunks: [entry],  // 将入口文件打包后的文件注入到对应的页面中
+    alwaysWriteToDisk: true,  // 该配置项说明见 [ejs模板文件无法使用内存文件的解决方法] 章节
+    minify: {
+      removeComments: isProduction,
+      collapseWhitespace: isProduction,
+      removeAttributeQuotes: false,
+      minifyCSS: isProduction,
+      minifyJS: isProduction
+    },
+  }))
+})
+
+```
 
 #### ejs模板文件无法使用内存文件的解决方法
 
-#### ejs的默认标签与webpack冲突
+webpack-dev-middleware 的一个重要特性就是生成的文件都位于内存中，是一个内存型的文件系统。而`koa-ejs`作为渲染引擎只能加载真实的物理文件，当它加载 `dist/vies/*.html`时会报文件未找到的错。因此，对模板文件的编译就不能再像其他资源一样生成于内存中，而是要把模板文件真真切切的生成为文件。[`HtmlWebpackHarddiskPlugin`](https://github.com/jantimon/html-webpack-harddisk-plugin) 这个webpack插件可以完美解决。
+```bash
+npm i -D html-webpack-harddisk-plugin
+```
+```javascript
+// path: scripts/webpack.config.js
+// ...
+const HtmlWebpackHarddiskPlugin = require('html-webpack-harddisk-plugin')
+// ... 见 [入口文件映射模板文件] 章节
+webpackConfig.plugins.push(new HtmlWebpackPlugin({
+  // 增加该配置项
+  alwaysWriteToDisk: true, 
+}))
+// ...
+
+// 应用 HtmlWebpackHarddiskPlugin 插件
+webpackConfig.plugins.push(new HtmlWebpackHarddiskPlugin())
+```
+
 
 #### 前后端typescript配置文件的冲突
 

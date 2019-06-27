@@ -78,6 +78,14 @@ const config = {
         ]
       },
       {
+        test: /\.html$/,
+        use: [
+          {
+            loader: 'html-loader'
+          }
+        ]
+      },
+      {
         test: /\.(jpg|jpeg|png|gif|svg)$/i,
         use: [{
           loader: 'url-loader',

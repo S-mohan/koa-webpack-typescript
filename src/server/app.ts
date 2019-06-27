@@ -13,7 +13,7 @@ require('koa-ejs')(app, {
   viewExt: 'html',
   cache: false,
   debug: false,
-  delimiter: '?',
+  // delimiter: '?',
 })
 
 // router
