@@ -56,9 +56,9 @@ const config = {
         ],
         use: [{
           loader: 'ts-loader',
-          // options: {
-          //   configFile: 'tsconfig.front.json'
-          // }
+          options: {
+            configFile: '../tsconfig.front.json'
+          }
         }],
       },
       {

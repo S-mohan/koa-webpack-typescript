@@ -6,6 +6,7 @@
   "scripts": {
     "start": "nodemon",
     "dev": "rm -rf dist && cross-env NODE_ENV=development ts-node bin/dev.server.ts",
+    "build-server": "tsc",
     "build": "rm -rf dist && cross-env NODE_ENV=production webpack --env=production --mode=production --config scripts/webpack.config.js"
   },
   "repository": {

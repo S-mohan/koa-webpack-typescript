@@ -91,7 +91,7 @@ webpack-dev-middleware是一个标准的express中间件，其一个重要作用
 ##### 安装依赖
 
 ```bash
-npm install webpack-dev-middleware @types/webpack-dev-middleware --save-dev
+npm i -D webpack-dev-middleware @types/webpack-dev-middleware
 ```
 ##### koa-webpack-dev-middleware
 
@@ -203,7 +203,7 @@ Object.keys(webpackConfig.entry).forEach(entry => {
 
 #### ejs模板文件无法使用内存文件的解决方法
 
-webpack-dev-middleware 的一个重要特性就是生成的文件都位于内存中，是一个内存型的文件系统。而`koa-ejs`作为渲染引擎只能加载真实的物理文件，当它加载 `dist/vies/*.html`时会报文件未找到的错。因此，对模板文件的编译就不能再像其他资源一样生成于内存中，而是要把模板文件真真切切的生成为文件。[`HtmlWebpackHarddiskPlugin`](https://github.com/jantimon/html-webpack-harddisk-plugin) 这个webpack插件可以完美解决。
+webpack-dev-middleware 的一个重要特性就是生成的文件都位于内存中，是一个内存型的文件系统。而`koa-ejs`作为渲染引擎只能加载真实的物理文件，当它加载 `dist/vies/*.html`时会报文件未找到的错。因此，对模板文件的编译就不能再像其他资源一样生成于内存中，而是要把模板文件真真切切的生成为文件。[HtmlWebpackHarddiskPlugin](https://github.com/jantimon/html-webpack-harddisk-plugin) 这个webpack插件可以完美解决。
 ```bash
 npm i -D html-webpack-harddisk-plugin
 ```
@@ -222,9 +222,86 @@ webpackConfig.plugins.push(new HtmlWebpackPlugin({
 webpackConfig.plugins.push(new HtmlWebpackHarddiskPlugin())
 ```
 
-
 #### 前后端typescript配置文件的冲突
+
+Server端和前端可能在typescript的配置上有所不同，尤其是在一些[编译选项](https://www.tslang.cn/docs/handbook/compiler-options.html)上。此时需要两个不同的配置文件。`tsconfig.json`是默认的TypeScript配置文件, 这里就作为Server端的配置项，根目录新建 `tsconfig.front.json` 作为前端的配置文件：
+
+```json
+// ./tsconfig.front.json
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "module": "es6",
+    "target": "es5",
+    "jsx": "react",
+    "allowJs": true
+  },
+  "include":[
+    "src/assets/**/*",
+    "src/entries/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+```
+同时，需要在webpack配置文件中指定配置文件路径：
+```javascript
+// path: scripts/webpack.config.js
+// ...
+ webpackConfig.module = {
+    rules: [{
+        test: /\.tsx?$/,
+        include: [
+          path.resolve(__dirname, '../src/')
+        ],
+        use: [{
+          loader: 'ts-loader',
+          options: {
+            // 指定配置文件
+            configFile: '../tsconfig.front.json'
+          }
+        }],
+      },
+      // ...
+    ],
+  },
+// ...
+```
+
+至此，基于基于WEBPACK/TYPESCRIPT/KOA的前后端多页面开发环境配置完毕。配置[nodemon](https://github.com/remy/nodemon), nodemon将监视启动目录中的文件，如果有任何文件更改，nodemon将自动重新启动node应用程序。
+
+> 运行 `npm start`, 实际上是运行 `nodemon`, nodemon将根据`nodemon.json`配置项来启动`npm run dev`命名。当src目录下的文件有任何变化时，它将重启应用程序。
+
+```json
+// ./nodemon.json
+{
+  "watch": ["src"],
+  "exec": "npm run dev",
+  "ext": "ts"
+}
+```
+在`package.json`的`scripts`中加入运行脚本方便一键启动。
+
+```json
+// ./package.json
+{
+  "scripts": {
+    "start": "nodemon",
+    "dev": "rm -rf dist && cross-env NODE_ENV=development ts-node bin/dev.server.ts",
+  }
+}
+```
 
 ### 生成环境(production)流程
 
+
+
 ### 完整webpack配置
+
+[webpack.config.js](https://github.com/S-mohan/koa-webpack-typescript/blob/master/scripts/webpack.config.js)
+
+### 项目地址
+
+[GitHub地址](https://github.com/S-mohan/koa-webpack-typescript)
