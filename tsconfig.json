@@ -9,6 +9,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
+  "include": [
+    "server/**/*",
+  ],
   "exclude": [
     "node_modules"
   ]

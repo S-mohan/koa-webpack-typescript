@@ -1,8 +1,8 @@
 const webpack = require('webpack')
 // 引入项目主模块
-import app from '../src/server/app'
+const app = require('../server/app')
 // webpack-dev-middleware中间件
-import devMiddleware from '../src/server/middleware/webpack-dev-middleware'
+import devMiddleware from '../server/middleware/webpack-dev-middleware'
 // webpack配置文件
 const webpackConfig = require('../scripts/webpack.config.js')
 

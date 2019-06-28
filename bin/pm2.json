@@ -1,0 +1,18 @@
+{
+  "apps": [
+    {
+      "name": "APP",
+      "script": "./bin/app.js",
+      "cwd": "./",
+      "error_file":"./bin/log/prod_error.log", 
+      "out_file":"./bin/log/prod_out.log", 
+      "log_date_format": "YYYY-MM-DD HH:mm:ss",
+      "watch": [
+        "./dist"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}

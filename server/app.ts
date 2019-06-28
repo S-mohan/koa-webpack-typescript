@@ -4,17 +4,21 @@ import * as Router from 'koa-router'
 
 const app: Koa = new Koa()
 
+const env = process.env.NODE_ENV || 'development'
+const isDev = env === 'development'
+
 // render
 require('koa-ejs')(app, {
   // @ts-ignore
   // root 为经过webpack编译后的真实模板路径
-  root: path.resolve(__dirname, '../../dist/views'),
+  root: path.resolve(__dirname, isDev ? '../dist/views' : '../views'),
   layout: false,
   viewExt: 'html',
   cache: false,
   debug: false,
   // delimiter: '?',
 })
+
 
 // router
 const router: Router = new Router()
@@ -35,5 +39,5 @@ app
   .use(router.routes())
   .use(router.allowedMethods())
 
-
+module.exports = app
 export default app

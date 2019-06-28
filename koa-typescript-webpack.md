@@ -1,7 +1,8 @@
-111
+TypeScript是一种开源编程语言，在软件开发社区中越来越受欢迎。TypeScript带来了可选的静态类型检查以及最新的ECMAScript特性。
+作为Javascript的超集，它的类型系统通过在键入时报告错误来加速和保障我们的开发，同时越来越多对的库或框架提供的`types`文件能够让这些库/框架的API一目了然。我对这门语言垂涎已久，但是迟迟无法找到练手的地方。
+很显然的，个人博客又一次的成了我的学习试验田😸。我放弃了上一版Vue单页面的框架，改为基于TypeScript/Koa的多页面应用。在改造的过程中，我试着将服务端（Koa）代码以及前端代码都使用TypeScript来开发，中间使用了webpack作为开发时前后端的桥梁。
 
 <hr class="page-break" hidden/>
-
 
 ### 目录结构
 ``` text
@@ -10,7 +11,7 @@
 ├── bin
 │   ├── dev.server.ts
 │   ├── pm2.json
-│   └── prod.server.ts
+│   └── app.ts
 ├── config                                       # 配置目录
 │   ├── dev.ts
 │   └── prod.ts
@@ -27,20 +28,28 @@
 │   ├── entries                                  # webpack入口
 │   │   ├── blog.ts
 │   │   └── index.ts
-│   ├── server                                   # 服务端
-│   │   ├── app.ts
-│   │   └── middleware
-│   │       └── webpack-dev-middleware.ts
 │   └── views                                    # 模板（文件名与入口一一对应）
 │       ├── blog.html
 │       ├── index.html
 │       └── layout                               # 模板布局
 │           ├── footer.html
 │           └── header.html
+├── server                                       # 服务端
+│   ├── app.ts
+│   └── middleware
+│       └── webpack-dev-middleware.ts
 ├── test                                         # 单元测试
 │   └── .gitkeep                                      
 ├── tsconfig.front.json
 └── tsconfig.json
+```
+
+### 安装项目依赖
+
+```bash
+npm i --save koa koa-{router,bodyparser,static,ejs}
+
+npm i -D typescript ts-node nodemon @types/{node,koa,koa-router,koa-bodyparser}
 ```
 
 ### 开发环境(development)流程
@@ -96,7 +105,7 @@ npm i -D webpack-dev-middleware @types/webpack-dev-middleware
 ##### koa-webpack-dev-middleware
 
 ```typescript
-// path: src/server/middleware/webpack-dev-middleware.ts
+// path: server/middleware/webpack-dev-middleware.ts
 // opts 配置同 webpack-dev-middleware
 
 import * as WebpackDevMiddleware from 'webpack-dev-middleware'
@@ -277,7 +286,7 @@ Server端和前端可能在typescript的配置上有所不同，尤其是在一�
 ```json
 // ./nodemon.json
 {
-  "watch": ["src"],
+  "watch": ["src", "server"],
   "exec": "npm run dev",
   "ext": "ts"
 }
@@ -295,13 +304,64 @@ Server端和前端可能在typescript的配置上有所不同，尤其是在一�
 ```
 
 ### 生成环境(production)流程
+![生成环境流程](https://img.smohan.net/dd9b2bb05d6445e6d66a0979683278d4.svg)
 
+相对而言，生产环境的配置就简单多了。当运行`npm run build`时，还是分两步走；
+- 通过 `tsc` 命令将 server 下的服务端代码全部编译到 `dist/server`目录；
+- 通过 `webpack` 命令将 src 下的前端代码全部编译到 `dist/*` 相应目录；
+- 当通过 `pm2 restart ./bin/pm2.json` 或者 `node ./bin/app.js` (需要设置环境变量为`production`) 启动服务时，实际上已经运行的是编译后的代码。这里需要注意两点：
+  - `static` 目录指向了 `dist/static`
+  - `views`  目录指向了 `dist/views`
 
+```typescript
+// ./server/app.ts
+// 获取环境变量
+const env = process.env.NODE_ENV || 'development'
+const isDev = env === 'development'
+require('koa-ejs')(app, {
+  // root 为经过webpack编译后的真实模板路径
+  // 生成环境下，server已经在dist目录，修改如下：
+  root: path.resolve(__dirname, isDev ? '../dist/views' : '../views'),
+})
+```
+
+```javascript
+// ./bin/app.js
+// 引用了编译后的 app.js 主文件
+const app = require('../dist/server/app')
+const path = require('path')
+// 设置静态资源目录
+app.use(require('koa-static')(path.resolve(__dirname, '../dist')))
+```
+
+此时，dist目录结构如下：
+```text
+.
+├── server
+│   ├── app.js
+│   └── middleware
+│       └── webpack-dev-middleware.js
+├── static
+│   ├── css
+│   │   ├── blog.4dcddae.css
+│   │   └── index.4dcddae.css
+│   └── js
+│       ├── blog.4dcddae.js
+│       └── index.4dcddae.js
+└── views
+    ├── blog.html
+    └── index.html
+```
+
+### 小结
+至此，基于webpack/koa/typescript的多页面服务端渲染的项目以及开发和生成环境的配置已经搭建完毕。其中`webpack-dev-middleware`在开发环境中提供了桥梁的作用。TypeScript作为JavaScript的超集，不仅可以有效杜绝由变量类型引起的误用问题，而且通过`@types`和如`vscode`等编辑器的配合，可以更方便快速的让开发者了解一些库/框架的API。
 
 ### 完整webpack配置
-
 [webpack.config.js](https://github.com/S-mohan/koa-webpack-typescript/blob/master/scripts/webpack.config.js)
 
 ### 项目地址
-
 [GitHub地址](https://github.com/S-mohan/koa-webpack-typescript)
+
+### 相关阅读
+- [看懂前端脚手架你需要这篇WEBPACK] (https://smohan.net/blog/bhcly1)
+- [MONGOOSE简要API](https://smohan.net/blog/b9rmng)

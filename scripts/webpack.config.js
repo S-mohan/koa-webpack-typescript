@@ -52,12 +52,13 @@ const config = {
     rules: [{
         test: /\.tsx?$/,
         include: [
-          path.resolve(__dirname, '../src/')
+          path.resolve(__dirname, '../src/assets'),
+          path.resolve(__dirname, '../src/entries')
         ],
         use: [{
           loader: 'ts-loader',
           options: {
-            configFile: '../tsconfig.front.json'
+            configFile: path.resolve(__dirname, '../tsconfig.front.json')
           }
         }],
       },
@@ -114,6 +115,7 @@ const config = {
     new OptimizeCSSPlugin({ safe: true, map: false, discardComments: { removeAll: true } }),
   ],
 
+  // 提取公共模块
   optimization : {
     splitChunks: {
       cacheGroups: {

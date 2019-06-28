@@ -1,6 +1,7 @@
 # koa-webpack-typescript
 基于Webpack/TypeScript/Koa的环境配置
 
+[博文地址](https://smohan.net/blog/zkqfmq)
 
 # 安装依赖
 

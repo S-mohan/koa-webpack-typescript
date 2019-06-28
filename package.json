@@ -7,7 +7,8 @@
     "start": "nodemon",
     "dev": "rm -rf dist && cross-env NODE_ENV=development ts-node bin/dev.server.ts",
     "build-server": "tsc",
-    "build": "rm -rf dist && cross-env NODE_ENV=production webpack --env=production --mode=production --config scripts/webpack.config.js"
+    "build-front": "cross-env NODE_ENV=production webpack --env=production --mode=production --config scripts/webpack.config.js",
+    "build": "rm -rf dist && npm run build-server && npm run build-front"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,8 @@
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
     "koa-ejs": "^4.2.0",
-    "koa-router": "^7.4.0"
+    "koa-router": "^7.4.0",
+    "koa-static": "^5.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.4.5",
